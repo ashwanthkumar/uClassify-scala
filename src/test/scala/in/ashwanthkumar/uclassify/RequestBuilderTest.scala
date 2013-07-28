@@ -3,10 +3,10 @@ package in.ashwanthkumar.uclassify
 import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
 
-class RequestSystemTest extends FunSpec with ShouldMatchers {
+class RequestBuilderTest extends FunSpec with ShouldMatchers {
 
   val testAPI = APIInfo("readKey", "writeKey")
-  val requestSystem = RequestSystem(testAPI)
+  val requestSystem = RequestBuilder(testAPI)
 
   describe("TextBase64") {
     it("should return xml on toXML") {
@@ -19,7 +19,7 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
       it("classify") {
         val classifyRequest = requestSystem.classify("testClassifier", List("some text1", "some text2"))
 
-        val classifierNames = (classifyRequest \\ "classifier").map(_ \ "@classifierName")
+        val classifierNames = (classifyRequest \\ "classify").map(_ \ "@classifierName")
         2 should be(classifierNames.size)
         "testClassifier" should be(classifierNames.head.mkString)
 
@@ -30,6 +30,10 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
         2 should be(textsBase64.size)
         assert(textsBase64.contains(Utils.base64Encode("some text1")))
         assert(textsBase64.contains(Utils.base64Encode("some text2")))
+        val textsBase64Ids = (classifyRequest \\ "textBase64").map(_ \ "@id").map(_.mkString)
+        2 should be(textsBase64Ids.size)
+        assert(textsBase64Ids.contains("text1"))
+        assert(textsBase64Ids.contains("text2"))
       }
 
       it("classifyKeywords") {
@@ -41,8 +45,8 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
 
         val textsBase64 = (classifyKeywordsRequest \\ "textBase64").map(_.text)
         2 should be(textsBase64.size)
-        textsBase64.contains(Utils.base64Encode("some text1"))
-        textsBase64.contains(Utils.base64Encode("some text2"))
+        assert(textsBase64.contains(Utils.base64Encode("some text1")))
+        assert(textsBase64.contains(Utils.base64Encode("some text2")))
       }
 
       it("getInformation") {

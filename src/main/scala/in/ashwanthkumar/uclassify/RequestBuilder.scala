@@ -12,25 +12,23 @@ case class TextBase64(id: String, text: String) {
   override def toString = toXml.mkString
 }
 
-class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
+class RequestBuilder(apiInfo: APIInfo)(baseXml: Elem) {
 
   def classify(classifier: String, textsToClassify: List[String], classifierUsername: Option[String] = None) = {
     val defaultClassifyAttributes = Map(
-      "id" -> s"classify${Random.nextInt()}",
       "classifierName" -> classifier
     )
 
     val classifyAttributes = if (classifierUsername
                                  .isDefined) defaultClassifyAttributes + ("username" -> classifierUsername.get)
     else defaultClassifyAttributes
-    val readCalls = readCallsBuilder("classifier", classifyAttributes, Some(textsToClassify.length))
+    val readCalls = readCallsBuilder("classify", classifyAttributes, Some(textsToClassify.length))
 
     baseXml.copy(child = baseXml.child ++ textsBuilder(textsToClassify) ++ readCalls)
   }
 
   def classifyKeywords(classifier: String, textsToClassify: List[String], classifierUsername: Option[String] = None) = {
     val defaultAttributes = Map(
-      "id" -> s"classifyKeyWords${Random.nextInt()}",
       "classifierName" -> classifier
     )
 
@@ -44,7 +42,6 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
 
   def getInformation(classifier: String) = {
     val defaultAttributes = Map(
-      "id" -> s"getInformation${Random.nextInt()}",
       "classifierName" -> classifier
     )
 
@@ -53,24 +50,17 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
   }
 
   def createClassifier(classifier: String) = {
-    val defaultAttributes = Map(
-      "id" -> s"createClassifier${Random.nextInt()}"
-    )
-    val writeCalls = writeCallsBuilder("create", defaultAttributes, classifier)
+    val writeCalls = writeCallsBuilder("create", Map(), classifier)
     baseXml.copy(child = baseXml.child ++ writeCalls)
   }
 
   def removeClassifier(classifier: String) = {
-    val defaultAttributes = Map(
-      "id" -> s"removeClassifier${Random.nextInt()}"
-    )
-    val writeCalls = writeCallsBuilder("remove", defaultAttributes, classifier)
+    val writeCalls = writeCallsBuilder("remove", Map(), classifier)
     baseXml.copy(child = baseXml.child ++ writeCalls)
   }
 
   def addClass(className: String, classifier: String) = {
     val defaultAttributes = Map(
-      "id" -> s"addClass${Random.nextInt()}",
       "className" -> className
     )
     val writeCalls = writeCallsBuilder("addClass", defaultAttributes, classifier)
@@ -79,7 +69,6 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
 
   def removeClass(className: String, classifier: String) = {
     val defaultAttributes = Map(
-      "id" -> s"removeClass${Random.nextInt()}",
       "className" -> className
     )
     val writeCalls = writeCallsBuilder("removeClass", defaultAttributes, classifier)
@@ -88,36 +77,34 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
 
   def train(textsToTrain: List[String], classifierClass: String, classifier: String) = {
     val defaultAttributes = Map(
-      "id" -> s"trainTexts${Random.nextInt()}",
       "className" -> classifierClass
     )
 
     val writeCalls = writeCallsBuilder("train", defaultAttributes, classifier, Some(textsToTrain.length))
-
     baseXml.copy(child = baseXml.child ++ textsBuilder(textsToTrain) ++ writeCalls)
   }
 
   def untrain(textsToTrain: List[String], classifierClass: String, classifier: String) = {
     val defaultAttributes = Map(
-      "id" -> s"untrainTexts${Random.nextInt()}",
       "className" -> classifierClass
     )
 
     val writeCalls = writeCallsBuilder("untrain", defaultAttributes, classifier, Some(textsToTrain.length))
-
     baseXml.copy(child = baseXml.child ++ textsBuilder(textsToTrain) ++ writeCalls)
   }
 
   private def writeCallsBuilder(operation: String, attributes: Map[String, String], classifierName: String, count: Option[Int] = None) = {
     val writeCalls = <writeCalls writeApiKey={apiInfo.writeKey} classifierName={classifierName}></writeCalls>
-    val elementAttributes = attributes.map(t => t._1 + "=\"" + t._2 + "\"").mkString(" ")
+    def elementAttributes(counter: Int) = (attributes ++ Map("id" -> s"$operation$counter"))
+                                        .map(t => t._1 + "=\"" + t._2 + "\"")
+                                        .mkString(" ")
 
     val operationXml = count match {
       case Some(size) => (1 to size).foldLeft(List[Elem]())((sofar, counter) => {
-        sofar ++ List(XML.loadString(s"<$operation $elementAttributes textId='text$counter' />"))
+        sofar ++ List(XML.loadString(s"<$operation ${elementAttributes(counter)} textId='text$counter' />"))
       })
 
-      case None => XML.loadString(s"<$operation $elementAttributes />")
+      case None => XML.loadString(s"<$operation ${elementAttributes(0)} />")
     }
 
     writeCalls.copy(child = writeCalls.child ++ operationXml)
@@ -125,31 +112,33 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
 
   private def readCallsBuilder(operation: String, attributes: Map[String, String], count: Option[Int] = None) = {
     val readCalls = <readCalls readApiKey={apiInfo.readKey}></readCalls>
-    val elementAttributes = attributes.map(t => t._1 + "=\"" + t._2 + "\"").mkString(" ")
+    def elementAttributes(counter: Int) = (attributes ++ Map("id" -> s"$operation$counter"))
+                                          .map(t => t._1 + "=\"" + t._2 + "\"")
+                                          .mkString(" ")
 
     val operationXml = count match {
       case Some(size) => (1 to size).foldLeft(List[Elem]())((sofar, counter) => {
-        sofar ++ List(XML.loadString(s"<$operation $elementAttributes textId='text$counter' />"))
+        sofar ++ List(XML.loadString(s"<$operation ${elementAttributes(counter - 1)} textId='text$counter' />"))
       })
 
-      case None => XML.loadString(s"<$operation $elementAttributes />")
+      case None => XML.loadString(s"<$operation ${elementAttributes(0)} />")
     }
 
     readCalls.copy(child = readCalls.child ++ operationXml)
   }
 
   private def textsBuilder(texts: List[String]) = texts.foldLeft(<texts></texts>)((textSoFar, text) => {
-    textSoFar.copy(child = textSoFar.child ++ TextBase64("text" + textSoFar.size, text).toXml)
+    textSoFar.copy(child = textSoFar.child ++ TextBase64("text" + (textSoFar.child.size + 1), text).toXml)
   })
 }
 
-object RequestSystem {
+object RequestBuilder {
   val baseClassifyRequest = <uclassify xmlns = "http://api.uclassify.com/1/RequestSchema" version = "1.01" ></uclassify>
 
   def apply() = {
     val config = ConfigFactory.load().getConfig("uclassify")
-    new RequestSystem(APIInfo(config.getString("read-key"), config.getString("write-key")))(baseClassifyRequest)
+    new RequestBuilder(APIInfo(config.getString("read-key"), config.getString("write-key")))(baseClassifyRequest)
   }
 
-  def apply(apiInfo: APIInfo) = new RequestSystem(apiInfo)(baseClassifyRequest)
+  def apply(apiInfo: APIInfo) = new RequestBuilder(apiInfo)(baseClassifyRequest)
 }
