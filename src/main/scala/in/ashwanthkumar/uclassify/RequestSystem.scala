@@ -86,6 +86,28 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
     baseXml.copy(child = baseXml.child ++ writeCalls)
   }
 
+  def train(textsToTrain: List[String], classifierClass: String, classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"trainTexts${Random.nextInt()}",
+      "className" -> classifierClass
+    )
+
+    val writeCalls = writeCallsBuilder("train", defaultAttributes, classifier, Some(textsToTrain.length))
+
+    baseXml.copy(child = baseXml.child ++ textsBuilder(textsToTrain) ++ writeCalls)
+  }
+
+  def untrain(textsToTrain: List[String], classifierClass: String, classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"untrainTexts${Random.nextInt()}",
+      "className" -> classifierClass
+    )
+
+    val writeCalls = writeCallsBuilder("untrain", defaultAttributes, classifier, Some(textsToTrain.length))
+
+    baseXml.copy(child = baseXml.child ++ textsBuilder(textsToTrain) ++ writeCalls)
+  }
+
   private def writeCallsBuilder(operation: String, attributes: Map[String, String], classifierName: String, count: Option[Int] = None) = {
     val writeCalls = <writeCalls writeApiKey={apiInfo.writeKey} classifierName={classifierName}></writeCalls>
     val elementAttributes = attributes.map(t => t._1 + "=\"" + t._2 + "\"").mkString(" ")

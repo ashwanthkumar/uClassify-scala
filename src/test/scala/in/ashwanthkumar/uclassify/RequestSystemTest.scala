@@ -15,7 +15,7 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
   }
 
   describe("Request System") {
-    describe("should construct xml requests for") {
+    describe("should construct xml requests for readCalls") {
       it("classify") {
         val classifyRequest = requestSystem.classify("testClassifier", List("some text1", "some text2"))
 
@@ -28,10 +28,10 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
 
         val textsBase64 = (classifyRequest \\ "textBase64").map(_.text)
         2 should be(textsBase64.size)
-        textsBase64.contains(Utils.base64Encode("some text1"))
-        textsBase64.contains(Utils.base64Encode("some text2"))
-
+        assert(textsBase64.contains(Utils.base64Encode("some text1")))
+        assert(textsBase64.contains(Utils.base64Encode("some text2")))
       }
+
       it("classifyKeywords") {
         val classifyKeywordsRequest = requestSystem.classifyKeywords("testClassifier", List("some text1", "some text2"))
 
@@ -55,7 +55,8 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
         val textsBase64 = (getInformationRequest \\ "textBase64").map(_.text)
         0 should be(textsBase64.size)
       }
-
+    }
+    describe("should construct xml requests for writeCalls") {
       it("createClassifier") {
         val createClassifierRequest = requestSystem.createClassifier("testClassifier")
 
@@ -71,6 +72,7 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
       it("removeClassifier") {
         val removeClassifierRequest = requestSystem.removeClassifier("testClassifier")
 
+        1 should be((removeClassifierRequest \\ "writeCalls").size)
         val createCalls = removeClassifierRequest \\ "remove"
         1 should be(createCalls.size)
       }
@@ -78,6 +80,7 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
       it("addClass") {
         val addClassRequest = requestSystem.addClass("class11", "testClassifier")
 
+        1 should be((addClassRequest \\ "writeCalls").size)
         val addedClass = addClassRequest \\ "addClass"
         1 should be(addedClass.size)
         "class11" should be(addedClass.head.attribute("className").mkString)
@@ -86,9 +89,32 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
       it("removeClass") {
         val removeClassRequest = requestSystem.removeClass("class11", "testClassifier")
 
+        1 should be((removeClassRequest \\ "writeCalls").size)
         val removedClass = removeClassRequest \\ "removeClass"
         1 should be(removedClass.size)
         "class11" should be(removedClass.head.attribute("className").mkString)
+      }
+
+      it("train") {
+        val sampleTexts = List("sample text1", "sample text2")
+        val trainingRequest = requestSystem.train(sampleTexts, "class11", "testClassifier")
+
+        1 should be((trainingRequest \\ "writeCalls").size)
+        2 should be((trainingRequest \\ "train").size)
+        "class11" should be((trainingRequest \\ "train").map(_ \ "@className").head.mkString)
+      }
+
+      it("untrain") {
+        val sampleTexts = List("sample text1", "sample text2")
+        val trainingRequest = requestSystem.untrain(sampleTexts, "class11", "testClassifier")
+
+        1 should be((trainingRequest \\ "writeCalls").size)
+        2 should be((trainingRequest \\ "untrain").size)
+        "class11" should be((trainingRequest \\ "untrain").map(_ \ "@className").head.mkString)
+
+        val untrainTexts = (trainingRequest \\ "textBase64").map(_.text)
+        assert(untrainTexts.contains(Utils.base64Encode("sample text1")))
+        assert(untrainTexts.contains(Utils.base64Encode("sample text2")))
       }
     }
   }
