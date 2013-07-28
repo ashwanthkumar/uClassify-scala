@@ -28,13 +28,41 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
     baseXml.copy(child = baseXml.child ++ textsBuilder(textsToClassify) ++ readCalls)
   }
 
-  private def readCallsBuilder(operation: String, attributes: Map[String, String], count: Option[Int] = Some(1)) = {
+  def classifyKeywords(classifier: String, textsToClassify: List[String], classifierUsername: Option[String] = None) = {
+    val defaultClassifyAttributes = Map(
+      "id" -> s"classifyKeyWords${Random.nextInt()}",
+      "classifierName" -> classifier
+    )
+
+    val classifyAttributes = if (classifierUsername
+                                 .isDefined) defaultClassifyAttributes + ("username" -> classifierUsername.get)
+    else defaultClassifyAttributes
+    val readCalls = readCallsBuilder("classifyKeywords", classifyAttributes, Some(textsToClassify.length))
+
+    baseXml.copy(child = baseXml.child ++ textsBuilder(textsToClassify) ++ readCalls)
+  }
+
+  def getInformation(classifier: String) = {
+    val defaultClassifyAttributes = Map(
+      "id" -> s"getInformation${Random.nextInt()}",
+      "classifierName" -> classifier
+    )
+
+    val readCalls = readCallsBuilder("getInformation", defaultClassifyAttributes)
+    baseXml.copy(child = baseXml.child ++ readCalls)
+  }
+
+  private def readCallsBuilder(operation: String, attributes: Map[String, String], count: Option[Int] = None) = {
     val readCalls = <readCalls readApiKey={apiInfo.readKey}></readCalls>
     val elementAttributes = attributes.map(t => t._1 + "=\"" + t._2 + "\"").mkString(" ")
 
-    val operationXml = (1 to count.get).foldLeft(List[Elem]())((sofar, counter) => {
-      sofar ++ List(XML.loadString(s"<$operation $elementAttributes textId='text$counter' />"))
-    })
+    val operationXml = count match {
+      case Some(size) => (1 to size).foldLeft(List[Elem]())((sofar, counter) => {
+        sofar ++ List(XML.loadString(s"<$operation $elementAttributes textId='text$counter' />"))
+      })
+
+      case None => XML.loadString(s"<$operation $elementAttributes />")
+    }
 
     readCalls.copy(child = readCalls.child ++ operationXml)
   }

@@ -18,7 +18,6 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
     describe("should construct xml requests for") {
       it("classify") {
         val classifyRequest = requestSystem.classify("testClassifier", List("some text1", "some text2"))
-        println(classifyRequest)
 
         val classifierNames = (classifyRequest \\ "classifier").map(_ \ "@classifierName")
         2 should be(classifierNames.size)
@@ -32,6 +31,29 @@ class RequestSystemTest extends FunSpec with ShouldMatchers {
         textsBase64.contains(Utils.base64Encode("some text1"))
         textsBase64.contains(Utils.base64Encode("some text2"))
 
+      }
+      it("classifyKeywords") {
+        val classifyKeywordsRequest = requestSystem.classifyKeywords("testClassifier", List("some text1", "some text2"))
+
+        val classifierNames = (classifyKeywordsRequest \\ "classifyKeywords").map(_ \ "@classifierName")
+        2 should be(classifierNames.size)
+        "testClassifier" should be(classifierNames.head.mkString)
+
+        val textsBase64 = (classifyKeywordsRequest \\ "textBase64").map(_.text)
+        2 should be(textsBase64.size)
+        textsBase64.contains(Utils.base64Encode("some text1"))
+        textsBase64.contains(Utils.base64Encode("some text2"))
+      }
+
+      it("getInformation") {
+        val getInformationRequest = requestSystem.getInformation("testClassifier")
+
+        val classifierNames = (getInformationRequest \\ "getInformation").map(_ \ "@classifierName")
+        1 should be(classifierNames.size)
+        "testClassifier" should be(classifierNames.head.mkString)
+
+        val textsBase64 = (getInformationRequest \\ "textBase64").map(_.text)
+        0 should be(textsBase64.size)
       }
     }
   }
