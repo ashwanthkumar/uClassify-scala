@@ -29,27 +29,76 @@ class RequestSystem(apiInfo: APIInfo)(baseXml: Elem) {
   }
 
   def classifyKeywords(classifier: String, textsToClassify: List[String], classifierUsername: Option[String] = None) = {
-    val defaultClassifyAttributes = Map(
+    val defaultAttributes = Map(
       "id" -> s"classifyKeyWords${Random.nextInt()}",
       "classifierName" -> classifier
     )
 
     val classifyAttributes = if (classifierUsername
-                                 .isDefined) defaultClassifyAttributes + ("username" -> classifierUsername.get)
-    else defaultClassifyAttributes
+                                 .isDefined) defaultAttributes + ("username" -> classifierUsername.get)
+    else defaultAttributes
     val readCalls = readCallsBuilder("classifyKeywords", classifyAttributes, Some(textsToClassify.length))
 
     baseXml.copy(child = baseXml.child ++ textsBuilder(textsToClassify) ++ readCalls)
   }
 
   def getInformation(classifier: String) = {
-    val defaultClassifyAttributes = Map(
+    val defaultAttributes = Map(
       "id" -> s"getInformation${Random.nextInt()}",
       "classifierName" -> classifier
     )
 
-    val readCalls = readCallsBuilder("getInformation", defaultClassifyAttributes)
+    val readCalls = readCallsBuilder("getInformation", defaultAttributes)
     baseXml.copy(child = baseXml.child ++ readCalls)
+  }
+
+  def createClassifier(classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"createClassifier${Random.nextInt()}"
+    )
+    val writeCalls = writeCallsBuilder("create", defaultAttributes, classifier)
+    baseXml.copy(child = baseXml.child ++ writeCalls)
+  }
+
+  def removeClassifier(classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"removeClassifier${Random.nextInt()}"
+    )
+    val writeCalls = writeCallsBuilder("remove", defaultAttributes, classifier)
+    baseXml.copy(child = baseXml.child ++ writeCalls)
+  }
+
+  def addClass(className: String, classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"addClass${Random.nextInt()}",
+      "className" -> className
+    )
+    val writeCalls = writeCallsBuilder("addClass", defaultAttributes, classifier)
+    baseXml.copy(child = baseXml.child ++ writeCalls)
+  }
+
+  def removeClass(className: String, classifier: String) = {
+    val defaultAttributes = Map(
+      "id" -> s"removeClass${Random.nextInt()}",
+      "className" -> className
+    )
+    val writeCalls = writeCallsBuilder("removeClass", defaultAttributes, classifier)
+    baseXml.copy(child = baseXml.child ++ writeCalls)
+  }
+
+  private def writeCallsBuilder(operation: String, attributes: Map[String, String], classifierName: String, count: Option[Int] = None) = {
+    val writeCalls = <writeCalls writeApiKey={apiInfo.writeKey} classifierName={classifierName}></writeCalls>
+    val elementAttributes = attributes.map(t => t._1 + "=\"" + t._2 + "\"").mkString(" ")
+
+    val operationXml = count match {
+      case Some(size) => (1 to size).foldLeft(List[Elem]())((sofar, counter) => {
+        sofar ++ List(XML.loadString(s"<$operation $elementAttributes textId='text$counter' />"))
+      })
+
+      case None => XML.loadString(s"<$operation $elementAttributes />")
+    }
+
+    writeCalls.copy(child = writeCalls.child ++ operationXml)
   }
 
   private def readCallsBuilder(operation: String, attributes: Map[String, String], count: Option[Int] = None) = {
