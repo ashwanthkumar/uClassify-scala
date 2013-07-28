@@ -1,4 +1,4 @@
-# uClassify Scala [![Build Status](https://travis-ci.org/ashwanthkumar/uClassify-scala.png)](https://travis-ci.org/ashwanthkumar/uClassify-scala.png)
+# uClassify Scala [![Build Status](https://travis-ci.org/ashwanthkumar/uClassify-scala.png)](https://travis-ci.org/ashwanthkumar/uClassify-scala/builds/)
 
 Scala client for [uClassify Service API](http://www.uclassify.com/XmlApiDocumentation.aspx). This repo is WIP. 
 
