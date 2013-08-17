@@ -8,9 +8,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationDouble
 
 class UClassifyClientTest extends FunSuite with ShouldMatchers {
-  val client = new UClassifyClient()
+  val client = UClassifyClient()
 
-  test("should classify") {
+  ignore("should classify") {
     val testTexts = List("I hate you", "I love you")
     val response = client.classify("Sentiment", testTexts, Some("uClassify"))
     response onComplete {
