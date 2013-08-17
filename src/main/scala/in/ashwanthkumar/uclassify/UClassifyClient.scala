@@ -5,13 +5,12 @@ import dispatch.Defaults._
 import scala.xml.Elem
 import ResponseTransformer._
 
-class UClassifyClient {
+class UClassifyClient(requestBuilder: RequestBuilder) {
 
-  val requestBuilder = RequestBuilder()
 
   import UClassifyClient.BASE_REQUEST
 
-  def classify(classifier: String, textsToClassify: List[String], classifierUsername: Option[String]) = {
+  def classify(classifier: String, textsToClassify: List[String], classifierUsername: Option[String] = None) = {
     val classifyXml = requestBuilder.classify(classifier, textsToClassify, classifierUsername)
     sendRequest(classifyXml.mkString) map transformClassifyResult(textsToClassify)
   }
@@ -60,4 +59,11 @@ class UClassifyClient {
 
 object UClassifyClient {
   def BASE_REQUEST = url("http://api.uclassify.com").POST
+
+  def apply() = new UClassifyClient(RequestBuilder())
+
+  def apply(readApiKey: String, writeApiKey: String) = new UClassifyClient(
+    RequestBuilder(
+      APIInfo(readApiKey,writeApiKey)
+    ))
 }
