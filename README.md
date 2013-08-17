@@ -7,8 +7,11 @@ Scala client for [uClassify Service API](http://www.uclassify.com/XmlApiDocument
 val client = UClassifyClient("__READ__API__KEY", "__WRITE__API__KEY")
 client.createClassifier(classifierName)
 
+val sampleTexts = List("she love me", "he hates me")
+for {
+  result <- client.classify(classifierName, sampleTexts)
+} yield result.foreach(println)
 
-for {result <- client.classify(classifierName, List("she love me", "he hates me"))} yield result.foreach(println)
 ```
 
 
