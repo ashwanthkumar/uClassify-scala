@@ -3,10 +3,17 @@
 Scala client for [uClassify Service API](http://www.uclassify.com/XmlApiDocumentation.aspx). This repo is WIP. 
 
 ## Client Usage
-TODO
+```
+val client = UClassifyClient("__READ__API__KEY", "__WRITE__API__KEY")
+client.createClassifier(classifierName)
+
+
+for {result <- client.classify(classifierName, List("she love me", "he hates me"))} yield result.foreach(println)
+```
+
 
 ## Example Usage
-TODO
+Refer Sample.scala under examples
 
 ## License
     Copyright 2013 Ashwanth Kumar
