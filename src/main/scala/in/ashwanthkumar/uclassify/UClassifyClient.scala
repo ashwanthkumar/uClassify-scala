@@ -16,6 +16,41 @@ class UClassifyClient {
     sendRequest(classifyXml.mkString) map transformClassifyResult(textsToClassify)
   }
 
+  def getInformation(classifier: String) = {
+    val getInformationXml = requestBuilder.getInformation(classifier)
+    sendRequest(getInformationXml.mkString) map transformGetInformationResult
+  }
+
+  def createClassifier(classifier: String) = {
+    val createClassifier = requestBuilder.createClassifier(classifier)
+    sendRequest(createClassifier.mkString) map verifyResponse
+  }
+
+  def removeClassifier(classifier: String) = {
+    val removeClassifier = requestBuilder.removeClassifier(classifier)
+    sendRequest(removeClassifier.mkString) map verifyResponse
+  }
+
+  def addClass(className: String, classifier: String) = {
+    val addClassToClassifier = requestBuilder.addClass(className, classifier)
+    sendRequest(addClassToClassifier.mkString) map verifyResponse
+  }
+
+  def removeClass(className: String, classifier: String) = {
+    val removeClassFromClassifier = requestBuilder.removeClass(className, classifier)
+    sendRequest(removeClassFromClassifier.mkString) map verifyResponse
+  }
+
+  def train(textsToTrain: List[String], classifierClass: String, classifier: String) = {
+    val trainClassifier = requestBuilder.train(textsToTrain, classifierClass, classifier)
+    sendRequest(trainClassifier.mkString) map verifyResponse
+  }
+
+  def untrain(textsToUntrain: List[String], classifierClass: String, classifier: String) = {
+    val untrainClassifier = requestBuilder.untrain(textsToUntrain, classifierClass, classifier)
+    sendRequest(untrainClassifier.mkString) map verifyResponse
+  }
+
   private[uclassify] def sendRequest(xmlStringToSend: String): dispatch.Future[Elem] = {
     val request = BASE_REQUEST << xmlStringToSend
     Http(request OK as.xml.Elem)
