@@ -1,3 +1,5 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 # uClassify Scala [![Build Status](https://travis-ci.org/ashwanthkumar/uClassify-scala.png)](https://travis-ci.org/ashwanthkumar/uClassify-scala/builds/)
 
 Scala client for [uClassify Service API](http://www.uclassify.com/XmlApiDocumentation.aspx). This repo is WIP. 
